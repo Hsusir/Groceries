@@ -1,0 +1,133 @@
+---
+title: "某雜貨店一個月的交易資料-關聯分析"
+author: "許sir"
+---
+
+### **資料說明**
+#### 1.本單元主題在介紹關聯分析
+
+#### 2.Groceries是某某雜貨店一個月的交易資料
+#### - 共9835筆資料及169個項目
+
+### **[設定所需的函式庫(libraries)以及載入資料]**
+```{r message=FALSE, warning=FALSE, results='hide'}
+setwd("/home/m600/Working Area/Rdata Practice/Customer Course/Groceries")
+#install.packages("arules")
+library ( arules )  
+
+data("Groceries")         #是內建資料集
+```
+
+### **[Part 1].基本關聯規則**
+
+#### **1-1.資料初探**
+```{r message=FALSE, warning=FALSE}
+summary(Groceries)                                  
+inspect(Groceries[1:10])                        
+
+     
+```
+
+#### **1-2.產生關聯規則**
+```{r message=FALSE, warning=FALSE}
+rules0=apriori(Groceries,parameter=list(support=0.001,confidence=0.5)) #support=0.001,confidence=0.5
+rules0                                           
+inspect(rules0[1:10])           
+```
+
+#### **1-3.對產生規則進行強度控制**
+
+#### **1-3-1.透過支援度、可靠度共同控制**
+```{r message=FALSE, warning=FALSE}
+rules1=apriori(Groceries,parameter=list(support=0.005,confidence=0.5)) #confidence=0.5
+rules1             
+rules2=apriori(Groceries,parameter=list(support=0.005,confidence=0.6))#confidence=0.6
+rules2 
+rules3=apriori(Groceries,parameter=list(support=0.005,confidence=0.64))#confidence=0.64
+rules3
+inspect(rules3)
+```
+
+#### **1-3-2.透過支援度控制**
+```{r message=FALSE, warning=FALSE}
+rules.sorted_sup = sort ( rules0, by="support" )   
+inspect ( rules.sorted_sup [1:5] )      
+```
+
+#### **1-3-3.透過可靠度控制**
+```{r message=FALSE, warning=FALSE}
+rules.sorted_con = sort ( rules0, by="confidence" )   
+inspect ( rules.sorted_con [1:5] )    
+```
+
+#### **1-3-4.透過提升度控制**
+```{r message=FALSE, warning=FALSE}
+rules.sorted_lift = sort ( rules0, by="lift" )   
+inspect ( rules.sorted_lift [1:5] ) 
+```
+
+### **[Part 2].實際應用**
+
+#### **2-1.特殊商品行銷**
+#### - 實務上，我們行銷時大多將兩樣商品進行捆綁，而不是一堆商品一起捆
+#### - 所以，如果我們想促銷“芥末(mustard)”，找出芥末(mustard)的關聯規則
+
+```{r message=FALSE, warning=FALSE}
+rules4=apriori(Groceries,parameter=list(maxlen=2,supp=0.001,conf=0.1),appearance=list(rhs="mustard",default="lhs"))
+inspect ( rules4 )  
+```
+
+#### **2-2.哪些商品組合賣最好**
+```{r message=FALSE, warning=FALSE}
+itemsets_apr = apriori ( Groceries, parameter = list (supp=0.001,target = "frequent itemsets"),control=list(sort=-1)) 
+itemsets_apr                                         
+inspect(itemsets_apr[1:5])       
+```
+
+#### - 以上，我們可以看出前五名賣最好的組合
+
+#### **2-3.捆綁銷售**
+#### - 以上，我們可以看出前五名賣最好的組合，接下來要針對上述進行捆綁
+#### - 我們可以看出牛奶跟蘇打、牛奶跟蜂蜜 為出現最頻繁的商品
+
+```{r message=FALSE, warning=FALSE}
+itemsets_ecl = eclat( Groceries, parameter = list ( minlen=1, maxlen=3,supp=0.001, target = "frequent itemsets"),control=list(sort=-1)) 
+itemsets_ecl 
+inspect(itemsets_ecl[1:5])
+```
+
+### **[Part 3].關聯規則視覺化**
+
+#### **3-1.套件載入**
+```{r message=FALSE, warning=FALSE, results='hide'}
+#install.packages("arulesViz")
+#installed.packages("grid")
+
+library ( arulesViz )
+```
+
+#### **3-2.基本繪圖1**
+```{r message=FALSE, warning=FALSE}
+rules5 = apriori ( Groceries, parameter = list ( support=0.002, confidence=0.5 ) )       
+rules5   
+plot(rules5) 
+```
+
+#### **3-3.基本繪圖2**
+```{r message=FALSE, warning=FALSE}
+plot(rules5,method="grouped") 
+             
+plot(rules5[1:50], method="matrix", measure="lift")
+plot(rules5[1:50], method="matrix3D", measure="lift")
+plot(rules5[1:50], method="paracoord")
+```
+
+#### **3-4.Interactive plot**
+```{r message=FALSE, warning=FALSE}
+#這種圖型可以在畫面上直點選範圍，但沒辦法在Rmardown顯示網頁，所以有興趣的同學可以在R中自行實驗
+
+#plot(rules5,shading="order", control=list(main = "Two key plot") 
+#plot(rules5,interactive=TRUE) 
+
+```
+
